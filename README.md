@@ -125,7 +125,6 @@ modules/
 templates/
   index.html              the dashboard
   login.html              login page
-generate_test_logs.py     makes fake attack logs for testing
 debug.py                  shows what the tool can see on your machine
 ```
 
