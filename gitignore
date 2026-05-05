@@ -1,0 +1,51 @@
+# ── Sensitive files — NEVER commit these ─────────────────────────────────────
+
+# Session secret key
+.secret_key
+
+# User config (contains hashed password)
+config.json
+
+# Uploaded log files (may contain real sensitive data)
+uploads/
+!uploads/.gitkeep
+
+# Threat intel cache (contains IP lookup results)
+threat_cache.json
+
+# Generated sample logs
+sample_logs/
+!sample_logs/.gitkeep
+
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.pyc
+
+# ── Virtual environment ───────────────────────────────────────────────────────
+venv/
+env/
+.venv/
+.env
+
+# ── OS files ──────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── IDE ───────────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ── Logs ─────────────────────────────────────────────────────────────────────
+*.log
+logs/
+
+# ── Reports ───────────────────────────────────────────────────────────────────
+*.pdf
+reports/
