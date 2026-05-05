@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SIEM Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root{--bg:#080c10;--panel:#0d1117;--border:#1a2332;--accent:#00ff95;--blue:#00b8ff;--red:#ff4d6d;--orange:#ff8c42;--yellow:#ffd166;--green:#06d6a0;--dim:#6e7681;--text:#c9d1d9;--mono:'Share Tech Mono',monospace;--ui:'Rajdhani',sans-serif}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{background:var(--bg);color:var(--text);font-family:var(--ui);min-height:100vh}
+    body::before{content:'';position:fixed;inset:0;pointer-events:none;background-image:linear-gradient(rgba(0,255,149,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,149,.025) 1px,transparent 1px);background-size:40px 40px}
+    header{position:relative;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:14px 32px;border-bottom:1px solid var(--border);background:linear-gradient(180deg,#0d1520,transparent)}
+    .logo{display:flex;align-items:center;gap:12px}
+    .logo-icon{width:36px;height:36px;border:2px solid var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 16px rgba(0,255,149,.3)}
+    .logo-icon svg{width:18px;height:18px;fill:var(--accent)}
+    .logo h1{font-size:18px;font-weight:700;letter-spacing:4px;color:var(--accent)}
+    .logo span{font-family:var(--mono);font-size:10px;color:var(--dim);letter-spacing:2px}
+    .os-pill{display:flex;align-items:center;gap:8px;background:rgba(0,255,149,.05);border:1px solid rgba(0,255,149,.2);border-radius:8px;padding:8px 16px}
+    .os-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);animation:blink 1.5s infinite}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+    #os-text{font-family:var(--mono);font-size:12px;color:var(--accent)}
+    .hdr-right{display:flex;align-items:center;gap:12px}
+    #clock{font-family:var(--mono);font-size:13px;color:var(--dim)}
+    .btn{padding:8px 16px;border-radius:6px;font-family:var(--ui);font-size:12px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .2s;text-transform:uppercase;border:1px solid}
+    .btn-red{border-color:var(--red);color:var(--red);background:transparent}.btn-red:hover{background:var(--red);color:#fff}
+    .btn-grn{border-color:var(--accent);color:var(--accent);background:transparent}.btn-grn:hover{background:var(--accent);color:var(--bg);box-shadow:0 0 20px rgba(0,255,149,.4)}
+    .btn-blu{border-color:var(--blue);color:var(--blue);background:transparent}.btn-blu:hover{background:var(--blue);color:var(--bg)}
+    main{position:relative;z-index:1;padding:24px 32px;max-width:1400px;margin:0 auto}
+    .tabs{display:flex;gap:0}
+    .tab{padding:11px 28px;font-size:13px;font-weight:700;letter-spacing:2px;cursor:pointer;transition:all .2s;border:1px solid var(--border);text-transform:uppercase;border-radius:8px 8px 0 0;border-bottom:none}
+    .tab.active{background:var(--panel);color:var(--accent);border-color:var(--accent)}
+    .tab:not(.active){background:rgba(13,17,23,.5);color:var(--dim)}
+    .tab-content{display:none}.tab-content.active{display:block}
+    .panel{background:var(--panel);border:1px solid var(--border);border-radius:0 10px 10px 10px}
+    .ph{padding:16px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+    .pt{font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;display:flex;align-items:center;gap:8px}
+    .pt::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor}
+    .drop-zone{margin:24px;border:2px dashed var(--border);border-radius:10px;padding:48px;text-align:center;cursor:pointer;transition:all .2s}
+    .drop-zone:hover,.drop-zone.dg{border-color:var(--blue);background:rgba(0,184,255,.03)}
+    .drop-zone .ico{font-size:46px;margin-bottom:12px}
+    .drop-zone h3{font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px}
+    .drop-zone p{font-family:var(--mono);font-size:12px;color:var(--dim)}
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+    .stat{background:var(--bg);border-radius:8px;padding:16px;text-align:center;border:1px solid var(--border)}
+    .sl{font-size:10px;letter-spacing:2px;color:var(--dim);margin-bottom:6px}
+    .sv{font-family:var(--mono);font-size:30px}
+    .sc .sv{color:var(--red)}.sh .sv{color:var(--orange)}.sm .sv{color:var(--yellow)}.se .sv{color:var(--accent)}
+    .banner{margin:0 24px 20px;padding:16px 20px;border-radius:10px;font-size:15px;font-weight:700;display:flex;align-items:center;gap:12px}
+    .clean{background:rgba(6,214,160,.1);border:1px solid rgba(6,214,160,.3);color:var(--green)}
+    .attacked{background:rgba(255,77,109,.1);border:1px solid rgba(255,77,109,.3);color:var(--red)}
+    .warning{background:rgba(255,140,66,.1);border:1px solid rgba(255,140,66,.3);color:var(--orange)}
+    .info{background:rgba(0,184,255,.1);border:1px solid rgba(0,184,255,.3);color:var(--blue)}
+    .mbox{padding:40px 24px;text-align:center}
+    .mico{font-size:64px;margin-bottom:16px}
+    .mtit{font-size:18px;font-weight:700;color:var(--text);margin-bottom:8px}
+    .msub{font-family:var(--mono);font-size:12px;color:var(--dim);margin-bottom:24px;line-height:1.8}
+    .log-item{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:6px;margin-bottom:8px;font-family:var(--mono);font-size:12px}
+    .lpath{color:var(--accent);flex:1}.llabel{color:var(--dim);font-size:11px}.lsize{color:var(--dim)}
+    .cpr{display:flex;gap:10px;margin:0 24px 20px}
+    .cpr input{flex:1;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;transition:border-color .2s}
+    .cpr input:focus{border-color:var(--blue)}
+    .aw{overflow-x:auto;padding:0 0 24px}
+    table{width:100%;border-collapse:collapse;font-size:13px}
+    th{padding:10px 16px;text-align:left;font-size:10px;letter-spacing:2px;color:var(--dim);border-bottom:1px solid var(--border);font-weight:600}
+    td{padding:12px 16px;border-bottom:1px solid rgba(26,35,50,.5);vertical-align:top}
+    tr:hover td{background:rgba(255,255,255,.02)}
+    .badge{display:inline-block;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:1px}
+    .badge-CRITICAL{background:rgba(255,77,109,.15);color:var(--red);border:1px solid rgba(255,77,109,.3)}
+    .badge-HIGH{background:rgba(255,140,66,.15);color:var(--orange);border:1px solid rgba(255,140,66,.3)}
+    .badge-MEDIUM{background:rgba(255,209,102,.15);color:var(--yellow);border:1px solid rgba(255,209,102,.3)}
+    .badge-LOW{background:rgba(6,214,160,.15);color:var(--green);border:1px solid rgba(6,214,160,.3)}
+    .mitre{font-family:var(--mono);font-size:11px;color:var(--blue)}
+    .ip{font-family:var(--mono);font-size:12px;color:var(--accent)}
+    .desc{font-size:12px;color:var(--dim);line-height:1.5;max-width:380px}
+    .lfw{margin:0 24px 24px}
+    .ftit{font-size:10px;letter-spacing:2px;color:var(--dim);margin-bottom:10px}
+    .lf{background:var(--bg);border:1px solid var(--border);border-radius:8px;max-height:220px;overflow-y:auto}
+    .fi{display:flex;align-items:center;gap:10px;padding:7px 14px;border-bottom:1px solid rgba(26,35,50,.4);font-family:var(--mono);font-size:11px;animation:si .3s ease}
+    @keyframes si{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:none}}
+    .fsrc{color:var(--dim);width:45px;flex-shrink:0;font-size:10px}
+    .ftype{color:var(--text);width:170px;flex-shrink:0}
+    .fip{color:var(--accent);width:120px;flex-shrink:0}
+    .fdet{color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+    .fwarn{color:var(--red);margin-left:auto;flex-shrink:0}
+    .fe{padding:24px;text-align:center;color:var(--dim);font-size:12px;font-family:var(--mono)}
+    .empty{padding:40px;text-align:center;font-family:var(--mono);font-size:12px;color:var(--dim)}
+    #toast{position:fixed;bottom:24px;right:24px;z-index:999;background:var(--panel);border-radius:8px;padding:12px 18px;font-family:var(--mono);font-size:12px;opacity:0;transform:translateY(16px);transition:all .3s;pointer-events:none;border:1px solid var(--accent)}
+    #toast.show{opacity:1;transform:none}
+    .sp{display:inline-block;width:14px;height:14px;border:2px solid transparent;border-top-color:currentColor;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px}
+    @keyframes spin{to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body>
+<header>
+  <div class="logo">
+    <div class="logo-icon"><svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 4l6 2.67V11c0 3.86-2.6 7.47-6 8.93C8.6 18.47 6 14.86 6 11V7.67L12 5z"/></svg></div>
+    <div><h1>SIEM</h1><span>Security Information & Event Management</span></div>
+  </div>
+  <div class="os-pill"><div class="os-dot"></div><span id="os-text">Detecting OS...</span></div>
+  <div class="hdr-right">
+    <div id="clock">--:--:--</div>
+    <button class="btn btn-red" onclick="logout()">⏻ Logout</button>
+  </div>
+</header>
+
+<main>
+  <div class="tabs">
+    <div class="tab active" onclick="sw('upload')">📁 Upload Log File</div>
+    <div class="tab" onclick="sw('live')">⚡ Live Monitor</div>
+    <div class="tab" onclick="sw('intel')">🔍 Threat Intel</div>
+  </div>
+
+  <!-- Upload Tab -->
+  <div class="tab-content active" id="tab-upload">
+    <div class="panel">
+      <div class="ph">
+        <div class="pt" style="color:var(--blue)">Upload & Analyse Log File</div>
+        <span style="font-family:var(--mono);font-size:11px;color:var(--dim)">SSH · Web · Any .log file</span>
+      </div>
+      <div class="drop-zone" id="dz" onclick="document.getElementById('fi').click()"
+           ondragover="event.preventDefault();this.classList.add('dg')"
+           ondragleave="this.classList.remove('dg')" ondrop="onDrop(event)">
+        <div class="ico">📂</div>
+        <h3>Drop your log file here or click to browse</h3>
+        <p>Supports: auth.log · access.log · syslog · any .log or .txt file</p>
+        <input type="file" id="fi" accept=".log,.txt" style="display:none" onchange="upload(this.files[0])">
+      </div>
+      <div id="upload-report-btn" style="display:none;padding:0 24px 12px;text-align:right">
+        <button class="btn" style="border-color:#00b8ff;color:#00b8ff;background:transparent;font-size:12px;padding:8px 18px"
+          onclick="downloadReport(lastUploadData?.alerts||[], {filename:lastUploadData?.filename,log_type:lastUploadData?.log_type,events_found:lastUploadData?.events_found})">
+          📄 Export PDF Report
+        </button>
+      </div>
+      <div id="ur" style="display:none;padding:0 24px 0">
+        <div class="stats">
+          <div class="stat sc"><div class="sl">Critical</div><div class="sv" id="uc">0</div></div>
+          <div class="stat sh"><div class="sl">High</div><div class="sv" id="uh">0</div></div>
+          <div class="stat sm"><div class="sl">Medium</div><div class="sv" id="um">0</div></div>
+          <div class="stat se"><div class="sl">Events</div><div class="sv" id="ue">0</div></div>
+        </div>
+        <div class="aw"><table><thead><tr><th>Severity</th><th>Alert</th><th>Source IP</th><th>Description</th><th>MITRE</th><th>Evidence</th></tr></thead><tbody id="ua"></tbody></table></div>
+      </div>
+      <div id="ue2" class="empty">Upload a log file to analyse it for attacks</div>
+    </div>
+  </div>
+
+  <!-- Live Monitor Tab -->
+  <div class="tab-content" id="tab-live">
+    <div class="panel">
+      <div class="ph">
+        <div class="pt" style="color:var(--accent)">Live Monitor</div>
+        <div style="display:flex;gap:10px;align-items:center">
+          <span id="mbadge" style="font-family:var(--mono);font-size:11px;color:var(--dim)">● OFFLINE</span>
+          <button class="btn btn-grn" id="mbtn" onclick="toggleMon()">▶ Start Monitor</button>
+        </div>
+      </div>
+
+      <!-- IDLE STATE -->
+      <div id="midle">
+        <div class="mbox">
+          <div class="mico" id="mico">🔍</div>
+          <div class="mtit" id="mtit">Ready to Monitor</div>
+          <div class="msub" id="msub">Click "Start Monitor" to scan this machine's logs<br>and check if your system has been attacked</div>
+        </div>
+        <div id="fls" style="display:none;margin:0 24px 16px">
+          <div style="font-size:10px;letter-spacing:2px;color:var(--dim);margin-bottom:10px">LOG FILES FOUND ON THIS MACHINE</div>
+          <div id="fll"></div>
+        </div>
+        <div class="cpr">
+          <input id="cp" type="text" placeholder="Or enter custom path e.g. /var/log/auth.log  or  C:\xampp\apache\logs\access.log">
+          <button class="btn btn-blu" onclick="startCustom()">Watch Custom File</button>
+        </div>
+      </div>
+
+      <!-- RESULTS STATE -->
+      <div id="mres" style="display:none">
+        <div class="banner info" id="sbanner">
+          <span id="sicon">⏳</span><span id="stext">Scanning...</span>
+        </div>
+        <div style="padding:0 24px 20px">
+          <div class="stats">
+            <div class="stat sc"><div class="sl">Critical</div><div class="sv" id="mc">0</div></div>
+            <div class="stat sh"><div class="sl">High</div><div class="sv" id="mh">0</div></div>
+            <div class="stat sm"><div class="sl">Medium</div><div class="sv" id="mm">0</div></div>
+            <div class="stat se"><div class="sl">Events</div><div class="sv" id="me">0</div></div>
+          </div>
+        </div>
+        <div style="padding:0 24px 8px"><div style="font-size:10px;letter-spacing:2px;color:var(--dim);margin-bottom:10px">DETECTED ALERTS</div></div>
+        <div class="aw" style="padding:0 0 20px"><table><thead><tr><th>Severity</th><th>Alert</th><th>Source IP</th><th>Description</th><th>MITRE</th><th>Evidence</th></tr></thead><tbody id="ma"></tbody></table></div>
+        <div style="padding:0 24px 12px;text-align:right" id="monitor-report-row" style="display:none">
+          <button class="btn" id="monitor-report-btn"
+            style="border-color:#00b8ff;color:#00b8ff;background:transparent;font-size:12px;padding:8px 18px"
+            onclick="downloadMonitorReport()">
+            📄 Export PDF Report
+          </button>
+        </div>
+        <div class="lfw">
+          <div class="ftit">⚡ LIVE EVENT FEED — NEW EVENTS APPEAR HERE IN REAL TIME</div>
+          <div class="lf" id="lf"><div class="fe">Watching for new events...</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Threat Intel Tab -->
+  <div class="tab-content" id="tab-intel">
+    <div class="panel">
+      <div class="ph">
+        <div class="pt" style="color:#ffd166">🔍 IP Threat Intelligence</div>
+        <span style="font-family:var(--mono);font-size:11px;color:var(--dim)">AbuseIPDB + Geolocation</span>
+      </div>
+
+      <!-- API Key setup -->
+      <div style="margin:20px 24px;padding:16px;background:rgba(255,209,102,.05);border:1px solid rgba(255,209,102,.2);border-radius:8px">
+        <div style="font-size:11px;letter-spacing:2px;color:var(--yellow);margin-bottom:10px">ABUSEIPDB API KEY (OPTIONAL)</div>
+        <div style="display:flex;gap:10px">
+          <input id="api-key-input" type="password" placeholder="Enter AbuseIPDB API key for abuse score data (free at abuseipdb.com)"
+            style="flex:1;padding:9px 14px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none">
+          <button class="btn btn-blu" onclick="saveApiKey()" style="white-space:nowrap">Save Key</button>
+          <a href="https://www.abuseipdb.com/register" target="_blank"
+            style="display:flex;align-items:center;padding:8px 14px;border:1px solid var(--border);border-radius:6px;color:var(--dim);font-size:12px;text-decoration:none;white-space:nowrap">
+            Get Free Key ↗
+          </a>
+        </div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--dim);margin-top:8px">
+          Without key: geolocation only (country, city, ISP) &nbsp;|&nbsp; With key: abuse score + report history
+        </div>
+      </div>
+
+      <!-- Single IP lookup -->
+      <div style="margin:0 24px 20px">
+        <div style="font-size:11px;letter-spacing:2px;color:var(--dim);margin-bottom:10px">LOOKUP SINGLE IP</div>
+        <div style="display:flex;gap:10px">
+          <input id="ip-lookup-input" type="text" placeholder="e.g. 185.234.219.12"
+            style="flex:1;padding:9px 14px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none"
+            onkeydown="if(event.key==='Enter')lookupSingleIP()">
+          <button class="btn btn-grn" onclick="lookupSingleIP()">🔍 Lookup IP</button>
+        </div>
+        <div id="single-ip-result" style="margin-top:14px;display:none"></div>
+      </div>
+
+      <!-- Bulk enrich from alerts -->
+      <div style="margin:0 24px 20px">
+        <div style="font-size:11px;letter-spacing:2px;color:var(--dim);margin-bottom:10px">ENRICH ALL ALERTS WITH THREAT INTEL</div>
+        <button class="btn btn-grn" onclick="enrichAlerts()" id="enrich-btn">
+          🌐 Enrich Alerts from Last Scan
+        </button>
+        <div style="font-family:var(--mono);font-size:11px;color:var(--dim);margin-top:8px">
+          Looks up all attacker IPs from your last upload or live scan
+        </div>
+      </div>
+
+      <!-- Results -->
+      <div id="intel-results" style="margin:0 24px 24px;display:none">
+        <div style="font-size:11px;letter-spacing:2px;color:var(--dim);margin-bottom:10px">THREAT INTELLIGENCE RESULTS</div>
+        <div id="intel-cards"></div>
+      </div>
+
+    </div>
+  </div>
+
+</main>
+<div id="toast"></div>
+
+<script>
+  // Clock
+  setInterval(()=>document.getElementById('clock').textContent=new Date().toLocaleTimeString('en-GB'),1000);
+
+  // Toast
+  function toast(msg,color='var(--accent)'){
+    const t=document.getElementById('toast');
+    t.textContent=msg;t.style.borderColor=color;t.style.color=color;
+    t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3500);
+  }
+
+  // Tabs
+  function sw(name){
+    document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['upload','live','intel'][i]===name));
+    document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+    document.getElementById('tab-'+name).classList.add('active');
+  }
+
+  // Logout
+  async function logout(){await fetch('/api/logout',{method:'POST'});location.href='/login';}
+
+  // OS Detection
+  async function loadOS(){
+    try{
+      const res=await fetch('/api/os');
+      const d=await res.json();
+      const os=d.os||{};
+      document.getElementById('os-text').textContent=`${os.icon||'💻'} ${os.display||'Unknown'} — MONITORING ACTIVE`;
+      if(d.logs&&d.logs.length){
+        document.getElementById('fls').style.display='block';
+        document.getElementById('fll').innerHTML=d.logs.map(l=>`
+          <div class="log-item">
+            <span style="color:var(--accent)">📄</span>
+            <span class="lpath">${l.path}</span>
+            <span class="llabel">${l.label}</span>
+            <span class="lsize">${l.size_kb} KB</span>
+          </div>`).join('');
+        document.getElementById('mico').textContent=os.icon||'🖥️';
+        document.getElementById('mtit').textContent=`${os.display} Detected`;
+        document.getElementById('msub').innerHTML=`Found <strong style="color:var(--accent)">${d.count}</strong> log file(s) on this machine.<br>Click <strong>"Start Monitor"</strong> to scan for attacks now.`;
+      } else {
+        document.getElementById('msub').innerHTML=`No log files found automatically on ${os.display}.<br>Enter a custom log path below.`;
+      }
+    }catch(e){}
+  }
+
+  // ── UPLOAD ─────────────────────────────────────────────────────────────────
+  function onDrop(e){e.preventDefault();document.getElementById('dz').classList.remove('dg');upload(e.dataTransfer.files[0]);}
+
+  async function upload(file){
+    if(!file)return;
+    const dz=document.getElementById('dz');
+    dz.innerHTML=`<div class="ico"><span class="sp" style="width:36px;height:36px;border-width:3px"></span></div><h3 style="color:var(--blue)">Analysing ${file.name}...</h3><p>Detecting format → Parsing → Running detection rules</p>`;
+    const form=new FormData();form.append('file',file);
+    try{
+      const res=await fetch('/api/upload',{method:'POST',body:form});
+      const d=await res.json();
+      resetDZ();
+      if(d.success){
+        showUR(d);
+        toast(d.alerts_found>0?`🚨 ${file.name} — ${d.alerts_found} alerts!`:`✅ ${file.name} — No attacks detected`,d.alerts_found>0?'var(--red)':'var(--accent)');
+      } else {toast('✗ '+d.error,'var(--red)');document.getElementById('ue2').style.display='block';}
+    }catch(e){resetDZ();toast('✗ Upload failed','var(--red)');}
+  }
+
+  function resetDZ(){
+    document.getElementById('dz').innerHTML=`<div class="ico">📂</div><h3>Drop your log file here or click to browse</h3><p>Supports: auth.log · access.log · syslog · any .log or .txt file</p><input type="file" id="fi" accept=".log,.txt" style="display:none" onchange="upload(this.files[0])">`;
+  }
+
+  let lastUploadData = null;
+
+  function showUR(d){
+    lastUploadData = d;
+    lastAlerts = d.alerts || [];  // store for threat intel
+    document.getElementById('ue2').style.display='none';
+    document.getElementById('ur').style.display='block';
+    const sc=d.severity_counts||{};
+    document.getElementById('uc').textContent=sc.CRITICAL||0;
+    document.getElementById('uh').textContent=sc.HIGH||0;
+    document.getElementById('um').textContent=sc.MEDIUM||0;
+    document.getElementById('ue').textContent=d.events_found||0;
+    renderTable('ua',d.alerts||[]);
+    // Show report button
+    document.getElementById('upload-report-btn').style.display='block';
+  }
+
+  async function downloadReport(alerts, scanInfo) {
+    if(!alerts||!alerts.length){toast('No alerts to export','var(--orange)');return;}
+    const btn = event.target;
+    btn.innerHTML='<span class="sp"></span>Generating...';
+    btn.disabled=true;
+    try{
+      const res = await fetch('/api/report',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({alerts, scan_info: scanInfo})
+      });
+      if(!res.ok){toast('✗ Report failed','var(--red)');btn.innerHTML='📄 Export PDF';btn.disabled=false;return;}
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = 'SIEM_Report.pdf';
+      a.click();
+      URL.revokeObjectURL(url);
+      toast('✅ Report downloaded!');
+    }catch(e){toast('✗ Download failed','var(--red)');}
+    btn.innerHTML='📄 Export PDF Report';
+    btn.disabled=false;
+  }
+
+  // ── LIVE MONITOR ──────────────────────────────────────────────────────────
+  let mon=false,livInt=null;
+
+  async function toggleMon(){mon?await stopMon():await startMon();}
+
+  async function startMon(customPath){
+    const btn=document.getElementById('mbtn');
+    btn.disabled=true;btn.innerHTML='<span class="sp"></span>Scanning...';
+    const body=customPath?JSON.stringify({path:customPath}):'{}';
+    const res=await fetch('/api/monitor/start',{method:'POST',headers:{'Content-Type':'application/json'},body});
+    const d=await res.json();
+    btn.disabled=false;
+    if(!d.success){
+      btn.innerHTML='▶ Start Monitor';
+      toast('✗ '+(d.error||'Failed'),'var(--red)');
+      if(d.tip)document.getElementById('msub').textContent=d.tip;
+      return;
+    }
+    // Switch UI
+    mon=true;
+    btn.innerHTML='⬛ Stop Monitor';btn.className='btn btn-red';
+    document.getElementById('mbadge').innerHTML='<span style="color:var(--accent)">● LIVE</span>';
+    document.getElementById('midle').style.display='none';
+    document.getElementById('mres').style.display='block';
+    // Status banner
+    const b=document.getElementById('sbanner'),si=document.getElementById('sicon'),st=document.getElementById('stext');
+    st.textContent=d.status;
+    if(d.is_clean&&!d.alerts_found){b.className='banner clean';si.textContent='✅';}
+    else if(d.severity_counts?.CRITICAL>0){b.className='banner attacked';si.textContent='🚨';}
+    else if(!d.is_clean){b.className='banner warning';si.textContent='⚠️';}
+    else{b.className='banner info';si.textContent='ℹ️';}
+    // Stats
+    const sc=d.severity_counts||{};
+    document.getElementById('mc').textContent=sc.CRITICAL||0;
+    document.getElementById('mh').textContent=sc.HIGH||0;
+    document.getElementById('mm').textContent=sc.MEDIUM||0;
+    document.getElementById('me').textContent=d.events_found||0;
+    renderTable('ma',d.alerts||[]);
+    lastMonitorData = d;
+    document.getElementById('monitor-report-row').style.display='block';
+    livInt=setInterval(pollLive,2000);
+    toast('⚡ Monitor started');
+  }
+
+  async function stopMon(){
+    await fetch('/api/monitor/stop',{method:'POST'});
+    mon=false;clearInterval(livInt);
+    document.getElementById('mbtn').innerHTML='▶ Start Monitor';document.getElementById('mbtn').className='btn btn-grn';
+    document.getElementById('mbadge').textContent='● OFFLINE';document.getElementById('mbadge').style.color='var(--dim)';
+    document.getElementById('midle').style.display='block';document.getElementById('mres').style.display='none';
+    toast('Monitor stopped');
+  }
+
+  async function startCustom(){
+    const p=document.getElementById('cp').value.trim();
+    if(!p){toast('Enter a log file path first','var(--orange)');return;}
+    if(mon)await stopMon();
+    await startMon(p);
+  }
+
+  async function pollLive(){
+    try{
+      const res=await fetch('/api/monitor/live');
+      if(res.status===401){
+        // Session expired - stop polling and redirect to login
+        clearInterval(livInt);
+        mon=false;
+        window.location.href='/login';
+        return;
+      }
+      const d=await res.json();
+      if(d.events&&d.events.length)renderFeed(d.events);
+      if(d.alerts&&d.alerts.length)renderTable('ma',d.alerts);
+    }catch(e){}
+  }
+
+  function renderFeed(evts){
+    const BAD=['failed_password','invalid_user','suspicious_request','backdoor_download','privilege_escalation','data_exfiltration','log_tampering','persistence','suspicious_service'];
+    document.getElementById('lf').innerHTML=evts.map(e=>{
+      const bad=BAD.includes(e.event_type);
+      const det=(e.user?'user: '+e.user:(e.path||e.raw||'').substring(0,55));
+      return `<div class="fi"><span class="fsrc">${(e.source||'').toUpperCase()}</span><span class="ftype" style="color:${bad?'var(--red)':'var(--text)'}">${(e.event_type||'').replace(/_/g,' ')}</span><span class="fip">${e.ip||'—'}</span><span class="fdet">${det}</span>${bad?'<span class="fwarn">⚠</span>':''}</div>`;
+    }).join('');
+  }
+
+  function renderTable(id,alerts){
+    const tb=document.getElementById(id);
+    if(!alerts.length){tb.innerHTML='<tr><td colspan="6" style="text-align:center;padding:32px;font-family:var(--mono);font-size:12px;color:var(--green)">✅ No attacks detected</td></tr>';return;}
+    tb.innerHTML=alerts.map((a,i)=>`
+      <tr style="animation-delay:${i*.04}s">
+        <td><span class="badge badge-${a.severity}">${a.severity}</span></td>
+        <td style="font-weight:700;color:var(--text);white-space:nowrap">${a.alert_type}</td>
+        <td class="ip">${a.source_ip}</td>
+        <td class="desc">${a.description}</td>
+        <td><span class="mitre">${a.mitre_id}</span><div style="font-size:10px;color:var(--dim);margin-top:2px">${a.mitre_tactic}</div></td>
+        <td style="font-family:var(--mono);font-size:12px;color:var(--dim)">${a.evidence_count}</td>
+      </tr>`).join('');
+  }
+
+  let lastMonitorData = null;
+
+  async function downloadMonitorReport(){
+    if(!lastMonitorData){toast('Run monitor first','var(--orange)');return;}
+    await downloadReport(lastMonitorData.alerts||[], {
+      filename: 'Live Monitor',
+      log_type: 'live',
+      events_found: lastMonitorData.events_found||0
+    });
+  }
+
+  loadOS();
+</script>
+</body>
+</html>
+<script>
+// ── Threat Intel JS ──────────────────────────────────────────────────────────
+
+let lastAlerts = [];
+
+// Store alerts whenever they're shown
+// Store alerts when upload results shown
+// (handled directly in upload function below)
+
+async function saveApiKey() {
+  const key = document.getElementById('api-key-input').value.trim();
+  await fetch('/api/intel/key', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({api_key: key})
+  });
+  toast(key ? '✅ API key saved' : 'Key cleared', 'var(--accent)');
+}
+
+async function lookupSingleIP() {
+  const ip  = document.getElementById('ip-lookup-input').value.trim();
+  const key = document.getElementById('api-key-input').value.trim();
+  if (!ip) { toast('Enter an IP address', 'var(--orange)'); return; }
+
+  const resultDiv = document.getElementById('single-ip-result');
+  resultDiv.style.display = 'block';
+  resultDiv.innerHTML = '<div style="font-family:var(--mono);font-size:12px;color:var(--dim)"><span class="sp"></span>Looking up ' + ip + '...</div>';
+
+  const res  = await fetch('/api/intel/lookup', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ip, api_key: key})
+  });
+  const data = await res.json();
+  if (data.success) {
+    resultDiv.innerHTML = renderIntelCard(data.result);
+  } else {
+    resultDiv.innerHTML = '<div style="color:var(--red);font-family:var(--mono);font-size:12px">✗ ' + data.error + '</div>';
+  }
+}
+
+async function enrichAlerts() {
+  // Get alerts from last scan
+  const alerts = lastAlerts.length ? lastAlerts :
+    (window.lastUploadData?.alerts || window.lastMonitorData?.alerts || []);
+
+  if (!alerts.length) {
+    toast('Run a scan first (Upload or Live Monitor)', 'var(--orange)');
+    return;
+  }
+
+  const key = document.getElementById('api-key-input').value.trim();
+  const btn = document.getElementById('enrich-btn');
+  btn.innerHTML = '<span class="sp"></span>Enriching IPs...';
+  btn.disabled  = true;
+
+  // Get unique non-private IPs
+  const ips = [...new Set(alerts.map(a => a.source_ip).filter(ip =>
+    ip && ip !== 'N/A' && !ip.includes('localhost') && !ip.startsWith('192.168') &&
+    !ip.startsWith('10.') && !ip.startsWith('172.')
+  ))];
+
+  if (!ips.length) {
+    toast('No external IPs to look up (all were local/private)', 'var(--yellow)');
+    btn.innerHTML = '🌐 Enrich Alerts from Last Scan';
+    btn.disabled  = false;
+    return;
+  }
+
+  // Look up each IP
+  const results = [];
+  for (const ip of ips) {
+    const res  = await fetch('/api/intel/lookup', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ip, api_key: key})
+    });
+    const d = await res.json();
+    if (d.success) results.push(d.result);
+    btn.innerHTML = `<span class="sp"></span>Checking ${ip}...`;
+  }
+
+  // Show results
+  const intelDiv  = document.getElementById('intel-results');
+  const cardsDiv  = document.getElementById('intel-cards');
+  intelDiv.style.display = 'block';
+  cardsDiv.innerHTML     = results.map(renderIntelCard).join('');
+
+  btn.innerHTML = '🌐 Enrich Alerts from Last Scan';
+  btn.disabled  = false;
+  toast(`✅ Looked up ${results.length} IP(s)`);
+}
+
+function renderIntelCard(r) {
+  if (r.private) {
+    return `<div style="padding:12px 16px;background:var(--panel);border:1px solid var(--border);border-radius:8px;margin-bottom:10px;font-family:var(--mono);font-size:12px;color:var(--dim)">
+      🏠 ${r.ip} — ${r.message}
+    </div>`;
+  }
+
+  const geo   = r.geo   || {};
+  const abuse = r.abuse || {};
+  const score = r.abuse_score >= 0 ? r.abuse_score : null;
+  const rc    = r.risk_color || '#6e7681';
+  const rl    = r.risk_level || 'UNKNOWN';
+  const flag  = r.flag || '🌐';
+
+  const scoreHTML = score !== null
+    ? `<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <div style="font-size:10px;letter-spacing:2px;color:var(--dim)">ABUSE SCORE</div>
+        <div style="flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden">
+          <div style="width:${score}%;height:100%;background:${rc};border-radius:3px"></div>
+        </div>
+        <div style="font-family:var(--mono);font-size:13px;color:${rc};font-weight:bold">${score}%</div>
+      </div>
+      <div style="font-family:var(--mono);font-size:11px;color:var(--dim);margin-bottom:4px">
+        Reports: ${abuse.total_reports || 0} &nbsp;|&nbsp; Last: ${abuse.last_reported ? abuse.last_reported.substring(0,10) : 'N/A'}
+      </div>`
+    : `<div style="font-family:var(--mono);font-size:11px;color:var(--dim);margin-bottom:4px">
+        No abuse data — add AbuseIPDB API key for full intel
+      </div>`;
+
+  return `
+    <div style="background:var(--panel);border:1px solid ${rc}40;border-radius:10px;margin-bottom:12px;overflow:hidden">
+      <div style="background:${rc}15;border-bottom:1px solid ${rc}30;padding:12px 16px;display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:20px">${flag}</span>
+          <div>
+            <div style="font-family:var(--mono);font-size:14px;color:${rc};font-weight:bold">${r.ip}</div>
+            <div style="font-size:11px;color:var(--dim)">${geo.city ? geo.city+', ' : ''}${geo.country || 'Unknown'}</div>
+          </div>
+        </div>
+        <span style="background:${rc}25;color:${rc};border:1px solid ${rc}50;padding:4px 12px;border-radius:4px;font-size:11px;font-weight:bold;letter-spacing:1px">${rl}</span>
+      </div>
+      <div style="padding:14px 16px">
+        ${scoreHTML}
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">
+          <div><span style="color:var(--dim)">ISP: </span><span style="color:var(--text);font-family:var(--mono)">${geo.isp||'Unknown'}</span></div>
+          <div><span style="color:var(--dim)">Region: </span><span style="color:var(--text);font-family:var(--mono)">${geo.region||'Unknown'}</span></div>
+          ${abuse.usage_type ? `<div><span style="color:var(--dim)">Type: </span><span style="color:var(--text);font-family:var(--mono)">${abuse.usage_type}</span></div>` : ''}
+          ${abuse.domain ? `<div><span style="color:var(--dim)">Domain: </span><span style="color:var(--text);font-family:var(--mono)">${abuse.domain}</span></div>` : ''}
+        </div>
+        ${r.from_cache ? '<div style="font-size:10px;color:var(--dim);margin-top:8px;font-family:var(--mono)">📦 Cached result</div>' : ''}
+      </div>
+    </div>`;
+}
+</script>

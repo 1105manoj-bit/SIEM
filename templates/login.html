@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>SIEM Login</title>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet" />
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{background:#080c10;display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:'Rajdhani',sans-serif}
+    body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,255,149,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,149,.025) 1px,transparent 1px);background-size:40px 40px;pointer-events:none}
+    .card{position:relative;z-index:1;width:400px;background:#0d1117;border:1px solid #1a2332;border-radius:14px;padding:44px 36px;box-shadow:0 0 60px rgba(0,255,149,.05)}
+    .card::before{content:'';position:absolute;top:0;left:15%;right:15%;height:1px;background:linear-gradient(90deg,transparent,#00ff95,transparent)}
+    .logo{text-align:center;margin-bottom:32px}
+    .logo-icon{width:56px;height:56px;border:2px solid #00ff95;border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;box-shadow:0 0 25px rgba(0,255,149,.3)}
+    .logo-icon svg{width:26px;height:26px;fill:#00ff95}
+    h1{font-size:24px;font-weight:700;letter-spacing:5px;color:#00ff95}
+    p{font-family:'Share Tech Mono',monospace;font-size:11px;color:#6e7681;margin-top:4px;letter-spacing:2px}
+    label{display:block;font-size:11px;letter-spacing:2px;color:#6e7681;margin-bottom:7px;font-weight:600}
+    .field{margin-bottom:16px}
+    input{width:100%;padding:11px 14px;background:rgba(255,255,255,.03);border:1px solid #1a2332;border-radius:7px;color:#c9d1d9;font-family:'Share Tech Mono',monospace;font-size:13px;outline:none;transition:all .2s}
+    input:focus{border-color:#00ff95;box-shadow:0 0 0 3px rgba(0,255,149,.1)}
+    .btn{width:100%;padding:13px;background:transparent;border:1px solid #00ff95;border-radius:7px;color:#00ff95;font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;letter-spacing:3px;cursor:pointer;transition:all .2s;margin-top:6px}
+    .btn:hover{background:#00ff95;color:#080c10;box-shadow:0 0 25px rgba(0,255,149,.4)}
+    .error{background:rgba(255,77,109,.1);border:1px solid rgba(255,77,109,.3);border-radius:7px;padding:10px 14px;color:#ff4d6d;font-family:'Share Tech Mono',monospace;font-size:12px;margin-bottom:14px;display:none}
+    .hint{margin-top:18px;padding:10px;background:rgba(0,184,255,.05);border:1px solid rgba(0,184,255,.2);border-radius:7px;font-family:'Share Tech Mono',monospace;font-size:11px;color:#00b8ff;text-align:center}
+    .spinner{display:inline-block;width:13px;height:13px;border:2px solid transparent;border-top-color:#080c10;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:5px}
+    @keyframes spin{to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 4l6 2.67V11c0 3.86-2.6 7.47-6 8.93C8.6 18.47 6 14.86 6 11V7.67L12 5z"/></svg>
+    </div>
+    <h1>SIEM</h1>
+    <p>Log Analysis System</p>
+  </div>
+
+  <div class="error" id="err">⚠ Wrong password</div>
+
+  <div class="field">
+    <label>Password</label>
+    <input type="password" id="pwd" placeholder="Enter password"
+           onkeydown="if(event.key==='Enter')login()">
+  </div>
+
+  <button class="btn" id="btn" onclick="login()">→ Login</button>
+
+  <div class="hint">Default password: <strong>siem1234</strong></div>
+</div>
+
+<script>
+  document.getElementById('pwd').focus();
+
+  async function login() {
+    const pwd = document.getElementById('pwd').value;
+    const btn = document.getElementById('btn');
+    const err = document.getElementById('err');
+    if (!pwd) return;
+
+    btn.innerHTML = '<span class="spinner"></span> Logging in...';
+    btn.disabled = true;
+    err.style.display = 'none';
+
+    const res  = await fetch('/api/login', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({password: pwd})
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      btn.innerHTML = '✓ Access Granted';
+      btn.style.background = '#00ff95';
+      btn.style.color = '#080c10';
+      setTimeout(() => location.href = '/', 400);
+    } else {
+      err.style.display = 'block';
+      btn.innerHTML = '→ Login';
+      btn.disabled = false;
+      document.getElementById('pwd').value = '';
+      document.getElementById('pwd').focus();
+    }
+  }
+</script>
+</body>
+</html>
